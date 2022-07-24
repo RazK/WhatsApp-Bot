@@ -1,0 +1,4 @@
+requests
+twilio
+Flask
+gunicorn
