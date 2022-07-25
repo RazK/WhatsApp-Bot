@@ -2,3 +2,4 @@ requests
 twilio
 Flask
 gunicorn
+bs4
