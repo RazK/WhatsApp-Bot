@@ -1,10 +1,22 @@
+import logging
+from tabnanny import verbose
 from flask import Flask, request
 import requests
 from twilio.twiml.messaging_response import MessagingResponse
 from bs4 import BeautifulSoup as BS
 from gunicorn_config import PORT
 
+
+RANDOM_QUOTE_URL = "https://api.quotable.io/random"
+RANDOM_CAT_IMG_URL = "https://cataas.com/cat"
+HORSES_GENERATOR_URL = "https://generatorfun.com"
+RANDOM_HORSE_PAGE = "random-horse-image"
+RANDOM_HORSE_PAGE_GENERATOR_URL = f"{HORSES_GENERATOR_URL}/{RANDOM_HORSE_PAGE}"
+
+
 app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
+
 
 @app.route('/', methods=['GET', 'POST'])
 def test():
@@ -13,40 +25,89 @@ def test():
 
 @app.route('/bot', methods=['POST'])
 def bot():
-    incoming_msg = request.values.get('Body', '').lower()
     resp = MessagingResponse()
-    msg = resp.message()
-    responded = False
+    response = resp.message()
+    request_body = request.values.get('Body', '')
+    app.logger.debug(f"Incoming: {request.values}")
+    app.logger.info(f"Incoming: {request_body}")
+    incoming_msg = request_body.lower()
+    understood = False
     if 'quote' in incoming_msg:
-        # return a quote
-        r = requests.get('https://api.quotable.io/random')
-        if r.status_code == 200:
-            data = r.json()
-            quote = f'{data["content"]} ({data["author"]})'
-        else:
-            quote = 'I could not retrieve a quote at this time, sorry.'
-        msg.body(quote)
-        responded = True
+        understood = True
+        handle_quote_request(response)
     if 'cat' in incoming_msg:
-        # return a cat pic
-        msg.media('https://cataas.com/cat')
-        responded = True
+        understood = True
+        handle_cat_request(response)
     if 'horse' in incoming_msg:
-        GENERATOR_FUN_BASE_URL = "https://generatorfun.com"
-        GET_HORSE_PATH = "random-horse-image"
-        r = requests.get(f"{GENERATOR_FUN_BASE_URL}/{GET_HORSE_PATH}")
-        if r.status_code == 200:
-            soup = BS(r.text, features="html.parser")    
-            horse_img_path = soup.find_all('img')[0]['src']
-            horse_url = f"{GENERATOR_FUN_BASE_URL}/{horse_img_path}"
-            msg.media(horse_url)
-            responded = True
-        else:
-            quote = "I could not retrieve a horse picture at this time, sorry."
-            msg.body(quote)
-    if not responded:
-        msg.body('I only know about famous quotes, cats, and horses. Sorry!')
-    return str(resp)
+        understood = True
+        handle_horse_request(response)
+    if not understood:
+        handle_misunderstanding(response)
+    outgoing_msg = str(resp)
+    app.logger.info(f"Outgoing: {response}")
+    return outgoing_msg
+
+
+def handle_quote_request(response):
+    try:
+        text = get_famous_quote()
+    except Exception as probelm:
+        app.logger.warning(probelm)
+        text = 'I could not retrieve a quote at this time, sorry.'
+    set_text(response, text)
+
+
+def handle_cat_request(response):
+    set_image(response, RANDOM_CAT_IMG_URL)
+
+
+def handle_horse_request(response):
+    try:
+        horse_img_url = get_horse_img_url()
+        set_image(response, horse_img_url)
+    except Exception as probelm:
+        app.logger.warning(probelm)
+        set_text(response, "I could not retrieve a horse image this time, sorry.")
+
+
+def handle_misunderstanding(response):
+    set_text(response, 'I only know about famous quotes, cats, and horses. Sorry!')
+
+
+def get_famous_quote():
+    quote_json_page = requests.get(RANDOM_QUOTE_URL)
+    if quote_json_page.status_code == 200:  # status OK
+        return get_formatted_quote(quote_json_page)
+    else:
+        raise Exception(f"Could not get from {RANDOM_QUOTE_URL}")
+
+
+def get_formatted_quote(quote_json_page):
+    quote = quote_json_page.json()
+    return f'{quote["content"]} ({quote["author"]})'
+
+
+def get_horse_img_url():
+    random_horse_page = requests.get(RANDOM_HORSE_PAGE_GENERATOR_URL)
+    if random_horse_page.status_code == 200:  # status OK
+        return find_horse_img_url(random_horse_page.text)
+    else:
+        raise Exception(f"Could not get from {RANDOM_HORSE_PAGE_GENERATOR_URL}")
+
+
+def find_horse_img_url(random_horse_page_html):
+    random_horse_soup = BS(random_horse_page_html, features="html.parser")
+    # the first image in the page is the horse
+    horse_img_path = random_horse_soup.find_all('img')[0]['src']
+    return f"{HORSES_GENERATOR_URL}/{horse_img_path}"
+
+
+def set_image(msg, img_url):
+    msg.media(img_url)
+
+
+def set_text(msg, quote):
+    msg.body(quote)
 
 
 if __name__ == '__main__':
