@@ -15,8 +15,8 @@ RANDOM_HORSE_PAGE_GENERATOR_URL = f"{HORSES_GENERATOR_URL}/{RANDOM_HORSE_PAGE}"
 HEBREW_DETECTED = "iw"
 
 repo = git.Repo(search_parent_directories=True)
-REPO_HEAD_SHA = repo.head.object.hexsha
-TEXT2PEACE_HEADER = f"*TEXT2PEACE ({REPO_HEAD_SHA[:4]}):*\n"
+REPO_HEAD_SHA = repo.head.object.hexsha[:4]
+TEXT2PEACE_HEADER = f"*TEXT2PEACE ({REPO_HEAD_SHA}):*\n"
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -25,7 +25,7 @@ translator = Translator()
 
 @app.route('/', methods=['GET', 'POST'])
 def test():
-    return "Hello, World!"
+    return f"Server running... ({REPO_HEAD_SHA})"
 
 
 @app.route('/bot', methods=['POST'])
@@ -111,7 +111,7 @@ def find_horse_img_url(random_horse_page_html):
 
 
 def handle_hebrew_text(hebrew_text, response):
-    translated_text = Translator.translate(hebrew_text, dest='en')
+    translated_text = Translator.translate(text=hebrew_text, dest='en')
     set_text(response, TEXT2PEACE_HEADER + translated_text)
 
 
