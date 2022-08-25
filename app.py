@@ -1,21 +1,26 @@
 import logging
-from tabnanny import verbose
 from flask import Flask, request
 import requests
+from googletrans import Translator
 from twilio.twiml.messaging_response import MessagingResponse
 from bs4 import BeautifulSoup as BS
 from gunicorn_config import PORT
-
+import git
 
 RANDOM_QUOTE_URL = "https://api.quotable.io/random"
 RANDOM_CAT_IMG_URL = "https://cataas.com/cat"
 HORSES_GENERATOR_URL = "https://generatorfun.com"
 RANDOM_HORSE_PAGE = "random-horse-image"
 RANDOM_HORSE_PAGE_GENERATOR_URL = f"{HORSES_GENERATOR_URL}/{RANDOM_HORSE_PAGE}"
+HEBREW_DETECTED = "iw"
 
+repo = git.Repo(search_parent_directories=True)
+REPO_HEAD_SHA = repo.head.object.hexsha
+TEXT2PEACE_HEADER = f"*TEXT2PEACE ({REPO_HEAD_SHA[:4]}):*\n"
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
+translator = Translator()
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -41,6 +46,9 @@ def bot():
     if 'horse' in incoming_msg:
         understood = True
         handle_horse_request(response)
+    if translator.detect(incoming_msg).lang == HEBREW_DETECTED:
+        understood = True
+        handle_hebrew_text(incoming_msg, response)
     if not understood:
         handle_misunderstanding(response)
     outgoing_msg = str(resp)
@@ -102,12 +110,17 @@ def find_horse_img_url(random_horse_page_html):
     return f"{HORSES_GENERATOR_URL}/{horse_img_path}"
 
 
+def handle_hebrew_text(hebrew_text, response):
+    translated_text = Translator.translate(hebrew_text, dest='en')
+    set_text(response, TEXT2PEACE_HEADER + translated_text)
+
+
 def set_image(msg, img_url):
     msg.media(img_url)
 
 
-def set_text(msg, quote):
-    msg.body(quote)
+def set_text(msg, text):
+    msg.body(text)
 
 
 if __name__ == '__main__':

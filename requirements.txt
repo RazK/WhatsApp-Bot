@@ -3,3 +3,5 @@ twilio
 Flask
 gunicorn
 bs4
+googletrans==4.0.0-rc1
+gitpython
