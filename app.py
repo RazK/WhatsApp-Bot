@@ -111,7 +111,7 @@ def find_horse_img_url(random_horse_page_html):
 
 
 def handle_hebrew_text(hebrew_text, response):
-    translated_text = Translator.translate(text=hebrew_text, dest='en')
+    translated_text = translator.translate(text=hebrew_text, dest='en')
     set_text(response, TEXT2PEACE_HEADER + translated_text)
 
 
