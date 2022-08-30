@@ -16,7 +16,7 @@ ENGLISH_DETECTED = "en"
 
 repo = git.Repo(search_parent_directories=True)
 REPO_HEAD_SHA = repo.head.object.hexsha[:4]
-TEXT2PEACE_HEADER = f"*TEXT2PEACE (v{REPO_HEAD_SHA})*"
+TEXT2PEACE_HEADER = f"*Text2Peace* (v{REPO_HEAD_SHA})"
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -79,7 +79,9 @@ def handle_horse_request(response):
 
 
 def handle_misunderstanding(response):
-    set_text(response, 'I only know about famous quotes, cats, and horses. Sorry!')
+    set_text(response, f"{TEXT2PEACE_HEADER}\nIf you text me in a foreign language, I'll translate for you. " 
+                       "Otherwise, if you ask me nicely I can send you some famous quotes, or images of cats and " 
+                       "horses. That's all I can do fow now!")
 
 
 def get_famous_quote():

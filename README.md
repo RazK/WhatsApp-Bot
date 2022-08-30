@@ -14,7 +14,10 @@ Send him a WhatsApp message!
 
 ### Features
 
-You can type any message with the following words, and the bot will respond accordingly.<br>
+<b>Translation</b> - If you text the bot in any language other than English, it will translate the message to English. It uses the [Google
+Translate API](https://pypi.org/project/googletrans/) to do that.
+
+<b>Easter Eggs</b> - You can type any message with the following words, and the bot will respond accordingly.<br>
 Check [app.py](app.py) for a full list of supported words.
 
 * <b>Horse</b> - The bot will fetch a horse image from https://generatorfun.com and send it back.
@@ -34,7 +37,8 @@ This bot has multiple components that are working together:
   That webhook forwards WhatsApp messages to my Flask server.
 * <b>Flask Server</b> -
   a [DigitalOcean](https://cloud.digitalocean.com/apps/eb865ebf-ebfd-46e3-9ad2-b1590569b0bf/overview) server
-  running [app.py](app.py) on a public facing URL. This server gets updated whenever a new commit is pushed to the main branch. 
+  running [app.py](app.py) on a public facing URL. This server gets updated whenever a new commit is pushed to the main
+  branch.
 
 ## Resources
 
