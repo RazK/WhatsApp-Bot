@@ -12,11 +12,11 @@ RANDOM_CAT_IMG_URL = "https://cataas.com/cat"
 HORSES_GENERATOR_URL = "https://generatorfun.com"
 RANDOM_HORSE_PAGE = "random-horse-image"
 RANDOM_HORSE_PAGE_GENERATOR_URL = f"{HORSES_GENERATOR_URL}/{RANDOM_HORSE_PAGE}"
-HEBREW_DETECTED = "iw"
+ENGLISH_DETECTED = "en"
 
 repo = git.Repo(search_parent_directories=True)
 REPO_HEAD_SHA = repo.head.object.hexsha[:4]
-TEXT2PEACE_HEADER = f"*TEXT2PEACE ({REPO_HEAD_SHA}):*\n"
+TEXT2PEACE_HEADER = f"*TEXT2PEACE (v{REPO_HEAD_SHA})*"
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -25,7 +25,7 @@ translator = Translator()
 
 @app.route('/', methods=['GET', 'POST'])
 def test():
-    return f"Server running... ({REPO_HEAD_SHA})"
+    return f"Server running... (v{REPO_HEAD_SHA})"
 
 
 @app.route('/bot', methods=['POST'])
@@ -46,9 +46,9 @@ def bot():
     if 'horse' in incoming_msg:
         understood = True
         handle_horse_request(response)
-    if translator.detect(incoming_msg).lang == HEBREW_DETECTED:
+    if translator.detect(incoming_msg).lang != ENGLISH_DETECTED:
         understood = True
-        handle_hebrew_text(incoming_msg, response)
+        handle_nonenglish_text(incoming_msg, response)
     if not understood:
         handle_misunderstanding(response)
     outgoing_msg = str(resp)
@@ -110,9 +110,9 @@ def find_horse_img_url(random_horse_page_html):
     return f"{HORSES_GENERATOR_URL}/{horse_img_path}"
 
 
-def handle_hebrew_text(hebrew_text, response):
-    translated_text = translator.translate(text=hebrew_text, dest='en').text
-    set_text(response, TEXT2PEACE_HEADER + translated_text)
+def handle_nonenglish_text(nonenglish_text, response):
+    translated_text = translator.translate(text=nonenglish_text, dest='en').text
+    set_text(response, f"{TEXT2PEACE_HEADER}\n{translated_text}")
 
 
 def set_image(msg, img_url):
